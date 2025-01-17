@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ödeme Sayfası</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f4f4f4;
+    }
+
+    .payment-container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+      width: 100%;
+    }
+
+    .payment-container h3 {
+      margin: 0 0 15px;
+      font-size: 18px;
+      color: #333;
+    }
+
+    .payment-info {
+      margin-bottom: 20px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #555;
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: #007bff;
+    }
+
+    .inline-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    .inline-group .form-group {
+      flex: 1;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 15px;
+    }
+
+    .checkbox-group input {
+      margin-right: 10px;
+      margin-top: 4px;
+    }
+
+    .terms {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .pay-button {
+      background-color: #007bff;
+      color: #fff;
+      font-size: 16px;
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .pay-button:hover {
+      background-color: #0056b3;
+    }
+
+    @media (max-width: 768px) {
+      .payment-container {
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="payment-container">
+    <h3>Ödeme Bilgileri</h3>
+    <div class="payment-info">
+      <p><strong>Abone No:</strong> 67000</p>
+      <p><strong>Ödenecek Tutar:</strong> 98.92 ₺</p>
+      <p><strong>Yüklenecek Bakiye (Ton):</strong> 12.3</p>
+    </div>
+
+    <div class="form-group">
+      <label for="card-number">Kart Numarası</label>
+      <input type="text" id="card-number" placeholder="1234 1234 1234 1234">
+    </div>
+
+    <div class="inline-group">
+      <div class="form-group">
+        <label for="expiry-date">Son Kullanma Tarihi</label>
+        <input type="text" id="expiry-date" placeholder="AA / YY">
+      </div>
+      <div class="form-group">
+        <label for="cvc">CVC</label>
+        <input type="text" id="cvc" placeholder="CVC">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="cardholder-name">Kart Sahibinin Adı</label>
+      <input type="text" id="cardholder-name" placeholder="Ad ve Soyadı">
+    </div>
+
+    <div class="checkbox-group">
+      <input type="checkbox" id="terms">
+      <label for="terms" class="terms">SAMPAŞ HOLDİNG Hizmet Koşulları ve Gizlilik Politikası koşullarını kabul ediyorum.</label>
+    </div>
+
+    <button class="pay-button">Öde</button>
+  </div>
+</body>
+</html>
