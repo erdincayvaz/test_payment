@@ -168,17 +168,29 @@
     </div>
 
     <div class="button-group">
-      <button class="pay-button">Öde</button>
+      <button class="pay-button" onclick="confirmPayment()">Öde</button>
       <button class="cancel-button" onclick="cancelPayment()">İptal</button>
     </div>
-  </div>
-
-  <script>
-    function cancelPayment() {
-      alert("Ödeme işlemi iptal edildi.");
-      // Geri yönlendirme yapabilirsiniz:
-      // window.location.href = "https://example.com";
-    }
-  </script>
+    
+    <script>
+      // Mobil uygulamaya mesaj gönderme fonksiyonu
+      function sendMessageToApp(message) {
+        if (window.AndroidInterface) {
+          window.AndroidInterface.postMessage(message);
+        } else {
+          console.log("AndroidInterface bulunamadı.");
+        }
+      }
+    
+      // Öde butonu için tıklama olayı
+      function confirmPayment() {
+        sendMessageToApp(true); // Mobil uygulamaya true gönder
+      }
+    
+      // İptal butonu için tıklama olayı
+      function cancelPayment() {
+        sendMessageToApp(false); // Mobil uygulamaya false gönder
+      }
+    </script>
 </body>
 </html>
