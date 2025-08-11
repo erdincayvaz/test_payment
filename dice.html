@@ -143,20 +143,27 @@ function randomRotation(mesh){
 }
 
 function setTopFace(mesh, value){
-  const q = Math.PI/2;
-  mesh.rotation.x = Math.round(mesh.rotation.x / q) * q;
-  mesh.rotation.z = Math.round(mesh.rotation.z / q) * q;
+  // Önce rotasyonu tamamen sıfırla
+  mesh.rotation.set(0, 0, 0);
 
-  // +X=3, -X=4, +Y=1, -Y=6, +Z=2, -Z=5
+  // Hedef yüzü +Y yönüne getir
   switch (value) {
-    case 1: break;
-    case 6: mesh.rotation.x += Math.PI;      break;
-    case 2: mesh.rotation.x += -Math.PI/2;   break;
-    case 5: mesh.rotation.x +=  Math.PI/2;   break;
-    case 3: mesh.rotation.z +=  Math.PI/2;   break;
-    case 4: mesh.rotation.z += -Math.PI/2;   break;
+    case 1: /* zaten +Y */ break;
+    case 6: mesh.rotation.x = Math.PI;         break;
+    case 2: mesh.rotation.x = -Math.PI / 2;    break;
+    case 5: mesh.rotation.x =  Math.PI / 2;    break;
+    case 3: mesh.rotation.z =  Math.PI / 2;    break;
+    case 4: mesh.rotation.z = -Math.PI / 2;    break;
   }
+
+  // Küçük sayısal kaymaları sıfırla (tam 90° katı olacak)
+  const q = Math.PI / 2;
+  mesh.rotation.x = Math.round(mesh.rotation.x / q) * q;
+  mesh.rotation.y = Math.round(mesh.rotation.y / q) * q;
+  mesh.rotation.z = Math.round(mesh.rotation.z / q) * q;
 }
+
+
 
 /* --- NEW: ekran üst yüzünü ölç --- */
 function getTopFace(mesh){
@@ -185,7 +192,7 @@ function init(){
   scene = new THREE.Scene();
 
   camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 1000);
-  camera.position.set(0,5,0); // top view
+  camera.position.set(0,5,3); //Kamera pozisyonu buradan yapılıyor. X, Y ve Z eksekleri.
   camera.lookAt(0,0,0);
 
   renderer = new THREE.WebGLRenderer({ antialias:true });
@@ -195,7 +202,7 @@ function init(){
 
   // lights
   const dir = new THREE.DirectionalLight(0xffffff, 1);
-  dir.position.set(15,45,5); // y ekseninde yükseltilmiş
+  dir.position.set(5,5,5); // y ekseninde yükseltilmiş
   dir.castShadow = true;
   scene.add(dir);
 
