@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>3D Dice (Two)</title>
+  <style>
+    body { margin: 0; background: #2c3e50; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+let scene, camera, renderer;
+let dice1, dice2;
+let rolling = false;
+
+init();
+animate();
+
+// Zar yüzlerini çiz (pip / nokta)
+function drawFace(pipCount) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+
+  // Arka plan (beyaz zar)
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, 256, 256);
+
+  ctx.fillStyle = '#000';
+  const pipRadius = 20;
+
+  // Pip koordinatları (3x3 grid)
+  const positions = [
+    [64, 64], [128, 64], [192, 64],
+    [64, 128],[128, 128],[192, 128],
+    [64, 192],[128, 192],[192, 192]
+  ];
+
+  // Zar yüzleri için pip desenleri
+  const pipPatterns = {
+    1: [4],                // Orta
+    2: [0, 8],             // Sol üst - sağ alt
+    3: [0, 4, 8],          // Sol üst - orta - sağ alt
+    4: [0, 2, 6, 8],       // 4 köşe
+    5: [0, 2, 4, 6, 8],    // 4 köşe + orta
+    6: [0, 2, 3, 5, 6, 8]  // 3 sol, 3 sağ
+  };
+
+  pipPatterns[pipCount].forEach(idx => {
+    const [x, y] = positions[idx];
+    ctx.beginPath();
+    ctx.arc(x, y, pipRadius, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  return new THREE.CanvasTexture(canvas);
+}
+
+function makeDice() {
+  const geometry = new THREE.BoxGeometry(1, 1, 1);
+  // Tek seferlik yüz dokuları
+  const faceTextures = [1,2,3,4,5,6].map(n => drawFace(n));
+  const materials = faceTextures.map(tex => new THREE.MeshLambertMaterial({ map: tex }));
+  return new THREE.Mesh(geometry, materials);
+}
+
+function init() {
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
+  renderer = new THREE.WebGLRenderer({antialias: true});
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  // Işıklar
+  const light = new THREE.DirectionalLight(0xffffff, 1);
+  light.position.set(5, 5, 5);
+  scene.add(light);
+
+  const ambient = new THREE.AmbientLight(0x404040);
+  scene.add(ambient);
+
+  // İki zar
+  dice1 = makeDice();
+  dice2 = makeDice();
+
+  dice1.position.set(-0.8, 0, 0);
+  dice2.position.set( 0.8, 0, 0);
+
+  // Ufak başlangıç açıları (daha doğal görünüm)
+  dice1.rotation.set(0.2, 0.4, 0.1);
+  dice2.rotation.set(-0.3, 0.1, 0.25);
+
+  scene.add(dice1);
+  scene.add(dice2);
+
+  camera.position.set(0, 0, 4);
+  camera.lookAt(0, 0, 0);
+
+  window.addEventListener('resize', onWindowResize, false);
+
+  // Zar atma
+  document.body.addEventListener('click', rollDice);
+  // İstersen: Space tuşu ile de at
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') rollDice();
+  });
+}
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function rollDice() {
+  if (rolling) return;
+  rolling = true;
+
+  const r1 = Math.floor(Math.random() * 6) + 1;
+  const r2 = Math.floor(Math.random() * 6) + 1;
+
+  // Hedef açılar (90° katları)
+  const xRot1 = (Math.floor(Math.random() * 4) + 1) * Math.PI / 2;
+  const yRot1 = (Math.floor(Math.random() * 4) + 1) * Math.PI / 2;
+
+  const xRot2 = (Math.floor(Math.random() * 4) + 1) * Math.PI / 2;
+  const yRot2 = (Math.floor(Math.random() * 4) + 1) * Math.PI / 2;
+
+  let step = 0;
+  const totalSteps = 30;
+
+  const s1x = dice1.rotation.x, s1y = dice1.rotation.y;
+  const s2x = dice2.rotation.x, s2y = dice2.rotation.y;
+
+  const e1x = s1x + (Math.PI * 4) + xRot1;
+  const e1y = s1y + (Math.PI * 4) + yRot1;
+
+  const e2x = s2x + (Math.PI * 4) + xRot2;
+  const e2y = s2y + (Math.PI * 4) + yRot2;
+
+  const interval = setInterval(() => {
+    step++;
+
+    const t = step / totalSteps;
+
+    dice1.rotation.x = s1x + (e1x - s1x) * t;
+    dice1.rotation.y = s1y + (e1y - s1y) * t;
+
+    dice2.rotation.x = s2x + (e2x - s2x) * t;
+    dice2.rotation.y = s2y + (e2y - s2y) * t;
+
+    if (step >= totalSteps) {
+      clearInterval(interval);
+      rolling = false;
+
+      // Zarlar düzgün açıda dursun (90° katına yuvarla)
+      dice1.rotation.x = Math.round(dice1.rotation.x / (Math.PI / 2)) * (Math.PI / 2);
+      dice1.rotation.y = Math.round(dice1.rotation.y / (Math.PI / 2)) * (Math.PI / 2);
+
+      dice2.rotation.x = Math.round(dice2.rotation.x / (Math.PI / 2)) * (Math.PI / 2);
+      dice2.rotation.y = Math.round(dice2.rotation.y / (Math.PI / 2)) * (Math.PI / 2);
+
+      const payload = { d1: r1, d2: r2, total: r1 + r2 };
+
+      // Sonucu native'e gönder
+      if (window.ReactNativeWebView) {
+        // RN tarafı genelde string ister
+        window.ReactNativeWebView.postMessage(JSON.stringify(payload));
+      } else if (window.webkit?.messageHandlers?.diceResult) {
+        // WKWebView tarafı JSON-uyumlu nesne alır
+        window.webkit.messageHandlers.diceResult.postMessage(payload);
+      } else {
+        console.log("Zar sonuçları:", payload);
+      }
+    }
+  }, 16);
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+}
+</script>
+</body>
+</html>
