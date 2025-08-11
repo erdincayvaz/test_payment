@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>3D Dice (Top View + 1 Bounce + Face Match + One Shot)</title>
+  <title>3D Dice (Top View + 1 Bounce + Face Match + One Shot, WebCrypto)</title>
   <style>
     body { margin: 0; background: #2c3e50; overflow: hidden; }
     canvas { display: block; }
@@ -31,6 +31,14 @@ function lockAfterFirstRoll() {
   lock = true;
   if (onClickRef) document.body.removeEventListener('click', onClickRef);
   if (onKeyRef) removeEventListener('keydown', onKeyRef);
+}
+
+/* ---------- WebCrypto RNG ---------- */
+// Mod bias'ı önlemek için 0..255 aralığından al, 252..255'i reddet
+function rollCrypto() {
+  const buf = new Uint8Array(1);
+  do { crypto.getRandomValues(buf); } while (buf[0] >= 252);
+  return (buf[0] % 6) + 1; // 1..6
 }
 
 /* ---------- texture & materials ---------- */
@@ -143,12 +151,12 @@ function randomRotation(mesh){
 }
 
 function setTopFace(mesh, value){
-  // Önce rotasyonu tamamen sıfırla
+  // rotasyonu sıfırla
   mesh.rotation.set(0, 0, 0);
 
-  // Hedef yüzü +Y yönüne getir
+  // hedef yüzü +Y yönüne getir
   switch (value) {
-    case 1: /* zaten +Y */ break;
+    case 1: break;
     case 6: mesh.rotation.x = Math.PI;         break;
     case 2: mesh.rotation.x = -Math.PI / 2;    break;
     case 5: mesh.rotation.x =  Math.PI / 2;    break;
@@ -156,14 +164,14 @@ function setTopFace(mesh, value){
     case 4: mesh.rotation.z = -Math.PI / 2;    break;
   }
 
-  // Küçük sayısal kaymaları sıfırla (tam 90° katı olacak)
+  // köşe hizalama
   const q = Math.PI / 2;
   mesh.rotation.x = Math.round(mesh.rotation.x / q) * q;
   mesh.rotation.y = Math.round(mesh.rotation.y / q) * q;
   mesh.rotation.z = Math.round(mesh.rotation.z / q) * q;
 }
 
-/* --- NEW: ekran üst yüzünü ölç --- */
+/* --- ekrandaki üst yüzü ölç --- */
 function getTopFace(mesh){
   const up = new THREE.Vector3(0,1,0);
   const dirs = {
@@ -190,17 +198,18 @@ function init(){
   scene = new THREE.Scene();
 
   camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 1000);
-  camera.position.set(0,5,3); //Kamera pozisyonu buradan yapılıyor. X, Y ve Z eksekleri.
+  camera.position.set(0,5,3);
   camera.lookAt(0,0,0);
 
   renderer = new THREE.WebGLRenderer({ antialias:true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = true;
   document.body.appendChild(renderer.domElement);
 
   // lights
   const dir = new THREE.DirectionalLight(0xffffff, 1);
-  dir.position.set(5,5,5); // y ekseninde yükseltilmiş
+  dir.position.set(5,5,5);
   dir.castShadow = true;
   scene.add(dir);
 
@@ -233,7 +242,7 @@ function init(){
 
   addEventListener('resize', onResize);
 
-  // olayları referansla ekle (kilitlemek için)
+  // olayları referansla ekle
   onClickRef = () => rollDice();
   document.body.addEventListener('click', onClickRef);
 
@@ -249,20 +258,22 @@ function onResize(){
   renderer.setSize(innerWidth, innerHeight);
 }
 
-/* ---------- roll ---------- */
+/* ---------- roll (WebCrypto ile) ---------- */
 function rollDice(){
-  if (lock || rolling) return; // 🔒 kilit kontrolü
+  if (lock || rolling) return;
   rolling = true;
   hasRolled = true;
 
-  const r1 = Math.floor(Math.random()*6)+1;
-  const r2 = Math.floor(Math.random()*6)+1;
+  // 🔐 WebCrypto tabanlı zar
+  const r1 = rollCrypto();
+  const r2 = rollCrypto();
 
   // hızlı spin: 10..14 çeyrek tur
-  const addX1 = (Math.floor(Math.random()*5)+10) * (Math.PI/2);
-  const addY1 = (Math.floor(Math.random()*5)+10) * (Math.PI/2);
-  const addX2 = (Math.floor(Math.random()*5)+10) * (Math.PI/2);
-  const addY2 = (Math.floor(Math.random()*5)+10) * (Math.PI/2);
+  const q = Math.PI/2;
+  const addX1 = (Math.floor(Math.random()*5)+10) * q;
+  const addY1 = (Math.floor(Math.random()*5)+10) * q;
+  const addX2 = (Math.floor(Math.random()*5)+10) * q;
+  const addY2 = (Math.floor(Math.random()*5)+10) * q;
 
   let step=0, total=60;
   const s1x=dice1.rotation.x, s1y=dice1.rotation.y;
@@ -286,12 +297,10 @@ function rollDice(){
       setTopFace(dice1, r1);
       setTopFace(dice2, r2);
 
-      // ölç → alert'te ekrandakiyle birebir göster
+      // ölç → logla
       const v1 = getTopFace(dice1);
       const v2 = getTopFace(dice2);
       console.log('planned:', r1, r2, 'measured(top):', v1, v2);
-
-      //alert(`🎲 Zar Sonuçları:\n1. Zar: ${v1}\n2. Zar: ${v2}\nToplam: ${v1 + v2}`);
 
       // tek sekme
       const groundY = scene.userData.groundY;
@@ -300,7 +309,7 @@ function rollDice(){
         bounceOnce(dice2, { groundY, bounceHeight:0.12 })
       ]).then(()=>{
         rolling = false;
-        //lockAfterFirstRoll(); // 🔒 bir daha atmayı kapat // Burası geri açılacak!!
+        //lockAfterFirstRoll(); // tek atış istiyorsan aç
       });
     }
   }, 16);
